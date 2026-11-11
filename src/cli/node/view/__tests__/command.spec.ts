@@ -1,41 +1,91 @@
-import { viewNodeCommand } from '../command';
+import { Command, CommanderError } from 'commander';
+import { view } from '../action.js';
 
-import { view } from '../action';
+vi.mock('../action.js', () => ({ view: vi.fn() }));
 
-vi.mock('../action', () => ({
-  view: vi.fn(),
-}));
+const NODE = '4vJ9JU1bJJE96FWSJKvHsmmFADCg4gpZQff4P3bkLKi';
 
-describe('viewNodeCommand', () => {
-  const mock_run_job_action = vi.fn();
-  const parseArgs = ['node', 'run', 'job definition path'];
+describe('node view command', () => {
+  let command: Command;
+  let output: string;
 
-  beforeEach(() => {
-    mock_run_job_action.mockReset();
-    (view as any).mockImplementation(mock_run_job_action);
+  beforeEach(async () => {
+    vi.resetModules();
+    command = (await import('../command.js')).viewNodeCommand;
+    output = '';
+    command.exitOverride().configureOutput({
+      writeOut: (text) => {
+        output += text;
+      },
+      writeErr: (text) => {
+        output += text;
+      },
+    });
   });
 
-  it('should call view action', () => {
-    viewNodeCommand.parse(parseArgs);
-    expect(mock_run_job_action).toHaveBeenCalledTimes(1);
+  it('accepts a full host public address and defaults to mainnet', async () => {
+    await command.parseAsync([NODE], { from: 'user' });
+    expect(view).toHaveBeenCalledOnce();
+    expect(view).toHaveBeenCalledWith(
+      NODE,
+      expect.objectContaining({ network: 'mainnet' }),
+      command,
+    );
   });
 
-  it('should set view node args', () => {
-    viewNodeCommand.parse(parseArgs);
-    expect(viewNodeCommand.args[0]).toBe('job definition path');
+  it('keeps devnet and custom RPC selection and accepts a single snapshot', async () => {
+    await command.parseAsync(
+      [
+        NODE,
+        '--network',
+        'devnet',
+        '--rpc',
+        'https://rpc.example.invalid',
+        '--once',
+      ],
+      { from: 'user' },
+    );
+    expect(view).toHaveBeenCalledWith(
+      NODE,
+      expect.objectContaining({
+        network: 'devnet',
+        rpc: 'https://rpc.example.invalid',
+        once: true,
+      }),
+      command,
+    );
   });
 
-  it('should have 2 options', () => {
-    expect(viewNodeCommand.options.length).toBe(2);
+  it('shows help without invoking the action or requiring a node', async () => {
+    await expect(
+      command.parseAsync(['--help'], { from: 'user' }),
+    ).rejects.toMatchObject({
+      code: 'commander.helpDisplayed',
+      exitCode: 0,
+    });
+    expect(output).toContain('--once');
+    expect(output).toContain('--network');
+    expect(output).toContain('--rpc');
+    expect(view).not.toHaveBeenCalled();
   });
 
-  it.each([
-    ['--network', '-n', 'mainnet'],
-    ['--rpc', undefined, undefined],
-  ])('should have %s option', (long, short, defaultValue) => {
-    const option = viewNodeCommand.options.find((i) => i.long === long);
-    expect(option?.long).toBe(long);
-    expect(option?.short).toBe(short);
-    expect(option?.defaultValue).toBe(defaultValue);
+  it.each(['help', '192.0.2.1', 'short', '0'.repeat(44)])(
+    'rejects invalid node %s before invoking the action',
+    async (node) => {
+      await expect(
+        command.parseAsync([node], { from: 'user' }),
+      ).rejects.toBeInstanceOf(CommanderError);
+      expect(output).toContain('--help');
+      expect(view).not.toHaveBeenCalled();
+    },
+  );
+
+  it('requires the node address', async () => {
+    await expect(
+      command.parseAsync([], { from: 'user' }),
+    ).rejects.toMatchObject({
+      code: 'commander.missingArgument',
+    });
+    expect(view).not.toHaveBeenCalled();
   });
 });

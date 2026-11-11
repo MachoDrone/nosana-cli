@@ -1,78 +1,106 @@
-import chalk from 'chalk';
-import { Command } from 'commander';
-import { Client, Market, Run } from '@nosana/sdk';
-import ora from 'ora';
+import { setTimeout as sleep } from 'node:timers/promises';
+import type { Command } from 'commander';
+import type { Client } from '@nosana/sdk';
+import { PublicKey, SystemProgram } from '@solana/web3.js';
 
-import { getJob } from '../../job/get/action.js';
-import { NotQueuedError } from '../../../generic/errors.js';
-import { sleep, clearLine } from '../../../generic/utils.js';
 import { getSDK } from '../../../services/sdk.js';
+import { parseNodeAddress } from './address.js';
+
+const POLL_MS = 10_000;
+
+function address(value: unknown): string {
+  return new PublicKey(String(value)).toBase58();
+}
+
+/** Read only: never use the node handlers that can join, stop or quit work. */
+export async function readNodeStatus(
+  sdk: Client,
+  node: string,
+): Promise<string> {
+  // RunAccount: 8-byte discriminator, 32-byte job, then 32-byte node.
+  const runs = await sdk.jobs.getRuns([
+    { memcmp: { offset: 40, bytes: node } },
+  ]);
+  if (!Array.isArray(runs)) throw new Error('Invalid run response');
+  if (runs.some((run) => address(run.account.node) !== node)) {
+    throw new Error('Run response does not match the requested node');
+  }
+  if (runs.length > 1) {
+    throw new Error('Multiple assigned runs found; current job is ambiguous');
+  }
+  if (runs.length) {
+    const jobAddress = address(runs[0].account.job);
+    const job = await sdk.jobs.get(jobAddress);
+    const jobNode = address(job.node);
+    if (
+      jobNode !== node &&
+      !(
+        job.state === 'QUEUED' && jobNode === SystemProgram.programId.toBase58()
+      )
+    ) {
+      throw new Error('Job response does not match the assigned node');
+    }
+    const market = address(job.market);
+    return `Assigned job ${jobAddress} [${job.state}] | market ${market}`;
+  }
+
+  const markets = await sdk.jobs.allMarkets();
+  if (!Array.isArray(markets)) throw new Error('Invalid market response');
+  const queued = [];
+  for (const market of markets) {
+    if (!Array.isArray(market.queue)) throw new Error('Invalid market queue');
+    const queue = market.queue.map(address);
+    const position = queue.indexOf(node);
+    if (position !== -1) {
+      if (queue.lastIndexOf(node) !== position) {
+        throw new Error('Node appears more than once in a market queue');
+      }
+      queued.push(
+        `Queued ${position + 1} / ${queue.length} | market ${address(
+          market.address,
+        )}`,
+      );
+    }
+  }
+  if (queued.length > 1) {
+    throw new Error('Node appears in multiple market queues');
+  }
+  return (
+    queued[0] ?? 'Not assigned to a job or queued (host connectivity unknown)'
+  );
+}
 
 export async function view(
   node: string,
-  options: {
-    [key: string]: any;
-  },
-  cmd: Command | undefined,
-) {
-  const nosana: Client = getSDK();
-  const spinner = ora(chalk.cyan('Checking node status')).start();
+  options: { once?: boolean },
+  _cmd: Command | undefined,
+): Promise<void> {
+  node = parseNodeAddress(node);
+  const sdk = getSDK();
+  console.log(`Node: ${node}`);
+  console.log('Public chain status; this is not the host console log stream.');
+  if (!options.once) console.log('Watching every 10 seconds. Ctrl-C to stop.');
 
-  // // Check if we already have a run account
-  // let run: Run | void = await getRun(node);
-  // if (!run) {
-  //   let selectedMarket: Market | void = await checkQueued(node);
-  //   if (!selectedMarket) {
-  //     spinner.warn('Currently not running a job and not queued in a market');
-  //     for (let timer = 10; timer > 0; timer--) {
-  //       spinner.start(chalk.cyan(`Trying again in ${timer}`));
-  //       await sleep(1);
-  //     }
-  //     spinner.stop();
-  //     clearLine();
-  //   } else {
-  //     // Currently queued in a market, wait for run
-  //     spinner.color = 'yellow';
-  //     const queuedMarketText = (market: Market, node: string) => {
-  //       return (
-  //         chalk.bgYellow.bold(' QUEUED ') +
-  //         ` at position ${
-  //           market.queue.findIndex((e: any) => e.toString() === node) + 1
-  //         }/${market.queue.length} in market ${chalk.cyan.bold(market.address)}`
-  //       );
-  //     };
-  //     spinner.text = queuedMarketText(selectedMarket, node);
-  //     try {
-  //       // will only return on a new run account
-  //       run = await waitForRun(
-  //         node,
-  //         selectedMarket.address,
-  //         // This callback gets called every minute with the updated market
-  //         (market: Market) => {
-  //           selectedMarket = market;
-  //           spinner.text = queuedMarketText(selectedMarket, node);
-  //         },
-  //       );
-  //     } catch (e) {
-  //       if (e instanceof NotQueuedError) {
-  //         spinner.warn('Node left market queue..');
-  //         for (let timer = 10; timer > 0; timer--) {
-  //           spinner.start(chalk.cyan(`Checking again in ${timer}`));
-  //           await sleep(1);
-  //         }
-  //         spinner.stop();
-  //         clearLine();
-  //       } else {
-  //         throw e;
-  //       }
-  //     }
-  //   }
-  // }
-  // if (run) {
-  //   if (spinner) spinner.stop();
-  //   const jobAddress = run.account.job.toString();
-  //   console.log(chalk.green.bold('Found claimed job!'));
-  //   await getJob(jobAddress, { wait: true, ...options }, undefined);
-  // }
-  return view(node, options, cmd);
+  let previous: string | undefined;
+  // The default SIGINT handler terminates the CLI even during an RPC request.
+  // No recursive calls, subscriptions, overlapping polls or signal overrides.
+  for (;;) {
+    let status: string;
+    try {
+      status = await readNodeStatus(sdk, node);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      status = `Status unavailable: ${message.replace(
+        /[\x00-\x1f\x7f]/g,
+        ' ',
+      )}`;
+      if (options.once) process.exitCode = 1;
+    }
+    if (status !== previous) {
+      console.log(`[${new Date().toISOString()}] ${status}`);
+      previous = status;
+    }
+    if (options.once) return;
+    await sleep(POLL_MS);
+  }
 }

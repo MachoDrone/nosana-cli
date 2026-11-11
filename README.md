@@ -41,7 +41,7 @@ $ nosana [command] [options] [argument]
 Available `node` commands:
 
 ```
-node view <node>                          View (any) Nosana Node
+node view [options] <node>                Watch public node job/queue status
 node join [command]                       Register for Nosana Grid
 node start [options] <market>             Start Nosana Node
 node run [options] <job-definition-file>  Run Job Definition File
@@ -65,6 +65,34 @@ Global options:
 --rpc <url>                          RPC node to use
 --log <logLevel>                     Log level (choices: "info", "none", "debug", "trace", default: "debug")
 ```
+
+## View a node without SSH
+
+Use the full node wallet address (the address after `/hosts/` in Nosana Explorer),
+not its IP address. Replace `NODE_WALLET_ADDRESS` below with that address.
+Brackets in help indicate optional flags; do not type them.
+
+```shell
+nosana node view --help
+nosana node view NODE_WALLET_ADDRESS
+```
+
+The viewer polls public chain state every ten seconds and prints changes in job
+assignment, job state and queue position. Ctrl-C stops it. It needs no SSH login
+or wallet key and does not join/leave queues, start/stop jobs, sign transactions,
+or subscribe to private job logs. An assignment does not prove that the GPU is
+executing work, and an empty queue/run result does not establish that a host is
+offline. RPC errors appear as unavailable status and are retried on the next poll.
+
+Use `--once` for one observation (exit status 1 if the read fails). The existing
+`--network mainnet|devnet` and `--rpc <url>` options select the chain/RPC. The RPC
+must support filtered `getProgramAccounts` reads. A host address alone does not
+grant access to the host's full live console or authorized job-log streams.
+
+This fork repairs the recursive `node view` implementation. Installing the
+upstream `@nosana/cli` package from npm still uses the upstream version. To run
+this checkout, use Node.js 24, `npm ci`, `npm run build`, then
+`node dist/src/index.js node view <node-address>`.
 
 ## Start a Nosana Node
 

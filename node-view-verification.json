@@ -1,0 +1,43 @@
+{
+  "verified_at_utc": "2026-11-11T14:54:59+00:00",
+  "upstream": "nosana-ci/nosana-cli",
+  "upstream_commit": "035f105addf89d286fcd4ff0a46bada5d1a56450",
+  "node_version": "24.22.2",
+  "scope": [
+    "Repair node view recursion as a read-only paced watcher; validate node wallet address and retain network/RPC settings",
+    "Resolve baseline resource API build incompatibility with official authenticated-resource contract, preserving image auth without cache/log disclosure"
+  ],
+  "verification": {
+    "build": "npm run build: PASS",
+    "format": "npm run prettier: PASS",
+    "full_tests": "npm test: 249 tests / 32 files PASS in 6.79s",
+    "final_fixture_recheck": "21 viewer tests PASS; 8 command tests PASS after replacing real example identifiers with synthetic fixtures",
+    "built_cli": "--help PASS; invalid node exits nonzero with usage guidance; failed snapshot exits 1; SIGINT during RPC exits in 0.012s",
+    "live": "One read-only mainnet default-RPC observation succeeded; unassigned/not-queued result retained as connectivity unknown"
+  },
+  "prior_failures": [
+    "Unchanged upstream build failed required-resources header and image-shape type checks; fixed in compatibility commit",
+    "Initial compatibility edit had a missing brace, corrected before focused/final checks",
+    "First full-suite run: sandbox EPERM opening an existing loopback test server; rerun with loopback permission passed all 249 tests",
+    "Optional PublicNode endpoint rejected indexed queries without its own token; normal default RPC succeeded"
+  ],
+  "limits": [
+    "Public status only; full host-console and protected job logs are not exposed",
+    "No host software installed, started or stopped; no transactions submitted",
+    "Credentialed image compatibility tested with fixtures only; no live protected image pull",
+    "Review focused on node view and the build-blocking resource contract, not an exhaustive repository audit"
+  ],
+  "sha256": {
+    "src/cli/node/view/action.ts": "647862d591a423605d749585c5925b3b7956c928c7e8f7e9a9fcc3bcce30e068",
+    "src/cli/node/view/address.ts": "8179b21cdb58c68f04c80b8a93f28b62625d06a0b7be84226b37a596b7689110",
+    "src/cli/node/view/command.ts": "4d3e2bd26a8885be9f80c3547ff22e3dbd1b0889732af69326cacd1d00fc9d35",
+    "src/cli/node/view/__tests__/action.spec.ts": "a063104ecb197ff6d82699be89e3c367891c2f61c5a239e472db06958011307e",
+    "src/cli/node/view/__tests__/command.spec.ts": "b84f9192f6313bb31d01bdc9c96cb45a4d392571a6e3d6aa8bff3ca1b54f3344",
+    "src/services/NodeManager/node/resource/resourceManager.ts": "b795393fbd3861d2a42bb20f0b98698233bd0d52d3ad79fba0917f83de61e7ac",
+    "src/services/NodeManager/node/resource/image/imageManager.ts": "9e2e03cf12fee0ea316db606889d8aab5e8b35a84ae91145459cda318baff3f8",
+    "src/services/NodeManager/monitoring/proxy/loggingProxy.ts": "8f26f5d06e504ad6fe8a8499324982d43d7aeaec774d25d63db8f74b9b73783c",
+    "src/services/NodeManager/node/resource/__tests__/marketResources.spec.ts": "97266fdd6fc8a5da2b325df2bcdf1c4e753d4d4313eec254876724e1c6b98421",
+    "src/services/NodeManager/monitoring/proxy/__tests__/registryAuthLogging.spec.ts": "f941f6061334214049248bf5c0f05e2769a9b7f13a933598fd7b77e5181cfd37",
+    "npm-shrinkwrap.json": "29bea9522d1dd98783e3d1443ee5884b73534ceb2f3ccbb2c5f9173bc4e97b9a"
+  }
+}
