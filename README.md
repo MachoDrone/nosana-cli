@@ -89,6 +89,17 @@ Use `--once` for one observation (exit status 1 if the read fails). The existing
 must support filtered `getProgramAccounts` reads. A host address alone does not
 grant access to the host's full live console or authorized job-log streams.
 
+To try the compiled fork without Git or a global installation, replace
+`NODE_WALLET_ADDRESS` and run:
+
+```shell
+npx --yes --ignore-scripts --package="https://github.com/MachoDrone/nosana-cli/releases/download/node-view-fix-1/nosana-cli-0.0.0.tgz" -- nosana node view NODE_WALLET_ADDRESS
+```
+
+The first run downloads the build and its runtime dependencies into npm's cache.
+The explicit package URL selects this fork even when an older CLI is installed
+locally. It does not replace your installed CLI. Ctrl-C stops the viewer.
+
 This fork repairs the recursive `node view` implementation. Installing the
 upstream `@nosana/cli` package from npm still uses the upstream version. To run
 this checkout, use Node.js 24, `npm ci`, `npm run build`, then

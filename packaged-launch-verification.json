@@ -1,0 +1,28 @@
+{
+  "verified_at_utc": "2026-11-11T15:08:15+00:00",
+  "source_parent": "eba9931b9714552d5e83b56351ded68676a13508",
+  "change": "Declare direct runtime imports https-proxy-agent7.0.5 and ws7.5.13 so compiled package runs without development dependencies",
+  "build": "PASS",
+  "tests": {
+    "count": 249,
+    "files": 32,
+    "seconds": 8.16,
+    "result": "PASS"
+  },
+  "package_checks": {
+    "isolated_packaged_help": "PASS",
+    "old_local_cli_bypassed": true,
+    "first_run_seconds": 6.578,
+    "packaged_public_status": "PASS",
+    "installed_cli_unchanged": true
+  },
+  "asset": "nosana-cli-0.0.0.tgz",
+  "sha256": "3918bf32370515124aaa1cc53c3419bfe564e42951407cb7f15c53e317db0fa9",
+  "launch_url": "https://github.com/MachoDrone/nosana-cli/releases/download/node-view-fix-1/nosana-cli-0.0.0.tgz",
+  "prior_failure": "Initial isolated package failed named HttpsProxyAgent import because runtime dependency was undeclared; corrected direct runtime dependency declarations and retested",
+  "limits": [
+    "Tested with Node24.22.2/npm11.19.0; recipient needs Node/npm",
+    "No global installation; first run downloads into npm cache",
+    "Public status only; no host console logs or host modification"
+  ]
+}

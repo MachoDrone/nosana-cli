@@ -83,6 +83,7 @@
     "eventsource": "^2.0.2",
     "express": "^4.19.2",
     "figlet": "^1.6.0",
+    "https-proxy-agent": "7.0.5",
     "inquirer": "^11.0.2",
     "lowdb": "^7.0.1",
     "openapi-fetch": "^0.10.2",
@@ -99,6 +100,7 @@
     "typia": "^10.1.0",
     "undici": "^6.14.1",
     "util": "^0.12.5",
+    "ws": "7.5.13",
     "yaml": "^2.8.0"
   }
 }
