@@ -21,8 +21,14 @@
   "launch_url": "https://github.com/MachoDrone/nosana-cli/releases/download/node-view-fix-1/nosana-cli-0.0.0.tgz",
   "prior_failure": "Initial isolated package failed named HttpsProxyAgent import because runtime dependency was undeclared; corrected direct runtime dependency declarations and retested",
   "limits": [
-    "Tested with Node24.22.2/npm11.19.0; recipient needs Node/npm",
+    "Tested with Node24.22.2/npm11.19.1; recipient needs Node/npm",
     "No global installation; first run downloads into npm cache",
     "Public status only; no host console logs or host modification"
-  ]
+  ],
+  "published_command_check": {
+    "anonymous_checksum": "PASS",
+    "exact_npx_url_help": "PASS",
+    "old_local_cli_bypassed": true,
+    "seconds": 12.015
+  }
 }
