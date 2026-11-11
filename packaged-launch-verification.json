@@ -21,7 +21,7 @@
   "launch_url": "https://github.com/MachoDrone/nosana-cli/releases/download/node-view-fix-1/nosana-cli-0.0.0.tgz",
   "prior_failure": "Initial isolated package failed named HttpsProxyAgent import because runtime dependency was undeclared; corrected direct runtime dependency declarations and retested",
   "limits": [
-    "Tested with Node24.22.2/npm11.19.1; recipient needs Node/npm",
+    "Original direct launch tested with Node24.22.2/npm11.19.1; temporary-runtime launch additionally tested from Node18.20.8/npm10.8.2 on Linux x64",
     "No global installation; first run downloads into npm cache",
     "Public status only; no host console logs or host modification"
   ],
@@ -30,5 +30,49 @@
     "exact_npx_url_help": "PASS",
     "old_local_cli_bypassed": true,
     "seconds": 12.015
+  },
+  "temporary_runtime_launch": {
+    "verified_at_utc": "2026-11-11T15:17:56.101782+00:00",
+    "starting_node": "18.20.8",
+    "starting_npm": "10.8.2",
+    "cli_node": "24.22.2",
+    "command": "npx --yes --ignore-scripts=false --package=node@24.22.2 -- npm exec --yes --ignore-scripts --package=\"https://github.com/MachoDrone/nosana-cli/releases/download/node-view-fix-1/nosana-cli-0.0.0.tgz\" -- nosana node view NODE_WALLET_ADDRESS",
+    "original_node18_failure_reproduced": "ERR_REQUIRE_ESM from rpc-websockets requiring uuid",
+    "checks": {
+      "original_node18": {
+        "exit": 1,
+        "seconds": 1.423,
+        "esm_error": true,
+        "old_cli_selected": false,
+        "help_has_once": false
+      },
+      "temporary_node24_help": {
+        "exit": 0,
+        "seconds": 11.88,
+        "esm_error": false,
+        "old_cli_selected": false,
+        "help_has_once": true
+      },
+      "temporary_node24_runtime": {
+        "exit": 0,
+        "seconds": 1.029,
+        "esm_error": false,
+        "old_cli_selected": false,
+        "help_has_once": false
+      },
+      "temporary_node24_live": {
+        "exit": 0,
+        "seconds": 2.284,
+        "old_cli_selected": false
+      }
+    },
+    "system_node_unchanged": true,
+    "runtime_source": "node@24.22.2 installed in npm cache; outer install scripts allowed, CLI install scripts disabled",
+    "cache_scope": "CLI package cache reused; temporary Node24 npm package downloaded during check",
+    "scope": "README/release instructions only; compiled asset unchanged; prior build and 249-test evidence reused",
+    "limits": [
+      "Executed on local Linux x64 with matching Node/npm versions, not on nn03",
+      "One read-only live observation; user feedback pending"
+    ]
   }
 }

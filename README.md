@@ -93,12 +93,18 @@ To try the compiled fork without Git or a global installation, replace
 `NODE_WALLET_ADDRESS` and run:
 
 ```shell
-npx --yes --ignore-scripts --package="https://github.com/MachoDrone/nosana-cli/releases/download/node-view-fix-1/nosana-cli-0.0.0.tgz" -- nosana node view NODE_WALLET_ADDRESS
+npx --yes --ignore-scripts=false --package=node@24.22.2 -- npm exec --yes --ignore-scripts --package="https://github.com/MachoDrone/nosana-cli/releases/download/node-view-fix-1/nosana-cli-0.0.0.tgz" -- nosana node view NODE_WALLET_ADDRESS
 ```
 
-The first run downloads the build and its runtime dependencies into npm's cache.
-The explicit package URL selects this fork even when an older CLI is installed
-locally. It does not replace your installed CLI. Ctrl-C stops the viewer.
+The first run downloads Node.js 24, the build and its runtime dependencies into
+npm's cache. The temporary runtime leaves your system Node.js and installed CLI
+unchanged. The explicit package URL selects this fork even when an older CLI is
+installed locally. Ctrl-C stops the viewer.
+
+This command was verified starting from Node.js 18.20.8/npm 10.8.2. Running the
+package directly under Node.js 18 fails with `ERR_REQUIRE_ESM` in a dependency.
+The outer command allows the Node.js package's installation script; the inner
+command disables installation scripts for the CLI and its dependencies.
 
 This fork repairs the recursive `node view` implementation. Installing the
 upstream `@nosana/cli` package from npm still uses the upstream version. To run
