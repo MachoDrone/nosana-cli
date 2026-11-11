@@ -45,8 +45,11 @@ export function applyLoggingProxyToClass(instance: any) {
 export function createLoggingProxy<T extends object>(target: T): T {
   const className = Object.getPrototypeOf(target).constructor.name;
 
-  const formatArguments = (args: any[]) => {
-    return args.map((arg) => {
+  const formatArguments = (args: any[], method: string | symbol) => {
+    return args.map((arg, index) => {
+      if (method === 'pullImage' && index === 1 && arg) {
+        return '[REDACTED registry authentication]';
+      }
       if (typeof arg === 'function') {
         return arg.constructor.name === 'AsyncFunction'
           ? '[AsyncFunction]'
@@ -65,7 +68,7 @@ export function createLoggingProxy<T extends object>(target: T): T {
           const logEntry: LogEntry = {
             class: className,
             method: String(propKey),
-            arguments: formatArguments(args),
+            arguments: formatArguments(args, propKey),
             timestamp: new Date().toISOString(),
             type: 'call',
           };
@@ -115,7 +118,10 @@ export function createFunctionLoggingProxy<T extends (...args: any[]) => any>(
   classLabel: string = 'StandaloneFunction',
 ): T {
   const formatArguments = (args: any[]) => {
-    return args.map((arg) => {
+    return args.map((arg, index) => {
+      if (func.name === 'pullImage' && index === 1 && arg) {
+        return '[REDACTED registry authentication]';
+      }
       if (typeof arg === 'function') {
         return arg.constructor.name === 'AsyncFunction'
           ? '[AsyncFunction]'

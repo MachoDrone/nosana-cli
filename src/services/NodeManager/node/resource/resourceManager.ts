@@ -1,11 +1,34 @@
 import { Resource } from '@nosana/sdk/dist/types/resources.js';
 
 import { clientSelector } from '../../../../api/client.js';
+import { getSDK } from '../../../sdk.js';
 import { ContainerOrchestrationInterface } from '../../provider/containerOrchestration/interface.js';
 import { NodeRepository } from '../../repository/NodeRepository.js';
 import { createResourceName } from './helpers/createResourceName.js';
-import { ImageManager } from './image/imageManager.js';
+import { ImageManager, RequiredImage } from './image/imageManager.js';
 import { VolumeManager } from './volume/volumeManager.js';
+
+export type MarketRequiredImage =
+  | string
+  | {
+      name: string;
+      server?: string;
+      username?: string;
+      password?: string;
+    };
+
+/** Host-manager and CLI releases are independent; accept both wire formats. */
+export function normalizeMarketImages(
+  images: MarketRequiredImage[],
+): RequiredImage[] {
+  return images.map((image) => {
+    if (typeof image === 'string') return { name: image };
+    const { name, server, username, password } = image;
+    return username || password
+      ? { name, auth: { server, username, password } }
+      : { name };
+  });
+}
 
 export class ResourceManager {
   private required_market: string | undefined;
@@ -34,16 +57,27 @@ export class ResourceManager {
     this.required_market = market;
 
     try {
+      const sdk = getSDK();
+      const authorization = await sdk.authorization.generate(
+        sdk.solana.wallet.publicKey.toString(),
+      );
       const { data, error } = await clientSelector().GET(
         '/markets/{id}/required-resources',
-        { params: { path: { id: market } } },
+        {
+          params: {
+            path: { id: market },
+            header: { authorization },
+          },
+        },
       );
 
-      if (error) {
+      if (error || !data) {
         return;
       }
 
-      await this.images.pullMarketRequiredImages(data.required_images);
+      await this.images.pullMarketRequiredImages(
+        normalizeMarketImages(data.required_images),
+      );
       await this.volumes.pullMarketRequiredVolumes(
         data.required_remote_resources,
       );

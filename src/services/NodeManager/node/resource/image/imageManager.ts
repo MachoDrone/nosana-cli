@@ -1,8 +1,11 @@
+import type { DockerAuth } from '@nosana/sdk';
 import { applyLoggingProxyToClass } from '../../../monitoring/proxy/loggingProxy.js';
 import { ContainerOrchestrationInterface } from '../../../provider/containerOrchestration/interface.js';
 import { NodeRepository } from '../../../repository/NodeRepository.js';
 import { hoursSinceDate } from '../helpers/hoursSunceDate.js';
 import { repoTagsContainsImage } from '../helpers/repoTagsContainsImage.js';
+
+export type RequiredImage = { name: string; auth?: DockerAuth };
 
 export class ImageManager {
   private fetched: boolean = false;
@@ -16,23 +19,25 @@ export class ImageManager {
   }
 
   public async pullMarketRequiredImages(
-    required_images: string[],
+    required_images: RequiredImage[],
   ): Promise<void> {
     this.fetched = true;
-    this.market_required_images = required_images;
+    this.market_required_images = required_images.map(({ name }) => name);
 
-    for (const image of required_images) {
-      if (!(await this.containerOrchestration.hasImage(image))) {
-        await this.containerOrchestration.pullImage(image);
+    for (const { name, auth } of required_images) {
+      if (!(await this.containerOrchestration.hasImage(name))) {
+        await this.containerOrchestration.pullImage(name, auth);
       }
 
-      if (!this.repository.getImageResource(image)) {
-        this.repository.updateImageResource(image, {
-          required: true,
-          lastUsed: new Date(),
-          usage: 1,
-        });
-      }
+      // Persist only cache metadata, never registry credentials. An image
+      // previously pulled by a job must also become marked market-required.
+      const known = this.repository.getImageResource(name);
+      this.repository.updateImageResource(name, {
+        required: true,
+        isPrivate: Boolean(auth) || Boolean(known?.isPrivate),
+        lastUsed: known?.lastUsed ?? new Date(),
+        usage: known?.usage ?? 1,
+      });
     }
   }
 
